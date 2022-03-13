@@ -9,12 +9,11 @@ from process_data import get_exchange_rates, get_lego_df, get_lego_image_url
 st.set_page_config(page_title="WebScrapping - PY101", page_icon="🛒", layout="wide")
 st.image("https://unpackai.github.io/unpackai_logo.svg")
 st.title("WebScrapping of Lego Prices around the world 🌏")
-st.write("*by <name>*")
-# TODO: Update your name here (and potentially the title if you want)
+st.write("*by Jeff*")
 
-st.sidebar.button("Refresh Data", on_click=st.legacy_caching.clear_cache)
+st.sidebar.button("Refresh Data", on_click=st.legacy_caching.clear_cache)  # type:ignore
 
-EXCHANGE_RATES = get_exchange_rates(["USD", "EUR", "GBP"])
+EXCHANGE_RATES = get_exchange_rates(["USD", "EUR", "GBP", "SGD"])
 st.sidebar.header("Exchange Rates:")
 st.sidebar.table(
     pd.DataFrame(EXCHANGE_RATES.items(), columns=["currency", "rate (in CNY)"])
@@ -57,7 +56,10 @@ df = df[df.legoName.isin(SELECTED_LEGOS)]
 
 st.sidebar.header("Selected Websites:")
 list_websites = df.source.unique()
-# TODO: Add filtering on list of Websites (similar to filter of Legos)
+SELECTED_WEBSITES = [
+    website for website in list_websites if st.sidebar.checkbox(website, value=True)
+]
+df = df[df.source.isin(SELECTED_WEBSITES)]
 
 
 st.sidebar.header("Filtering by price:")
@@ -67,8 +69,10 @@ max_price = st.sidebar.slider(
 )
 df = df[df.price <= max_price]
 
-# TODO: Add filtering on minimum price
-
+min_price = st.sidebar.slider(
+    "Minimum Price", min_value=0.0, max_value=current_max_price, value=0.0
+)
+df = df[df.price >= min_price]
 
 # We get a DataFrame with all the Lego
 # and another one with the average per Website and Lego Set
@@ -100,18 +104,7 @@ with st.expander("Distribution of prices:", expanded=True):
     )
     st.pyplot(fig_all)
 
-@st.cache
-def convert_df(df):
-    # IMPORTANT: Cache the conversion to prevent computation on every rerun
-    return df.to_csv().encode('utf-8')
-
 with st.expander("All prices:"):
-    st.download_button(
-        label="Download Lego Prices",
-        data=convert_df(df),
-        file_name='lego_prices.csv',
-        mime='text/csv',
-    )
     st.table(df.drop(["image"], axis=1))
 
 
