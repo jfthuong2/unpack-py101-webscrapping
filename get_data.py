@@ -59,7 +59,7 @@ def get_df_amazon(keywords, domain="co.uk"):
 
 def get_newegg_url(keywords):
     """Return the URL for an NewEgg search based on a keyword"""
-    ...
+    return f"https://www.newegg.com/p/pl?d={quote(keywords)}"
 
 
 def get_newegg_price(price_current):
@@ -71,4 +71,15 @@ def get_newegg_price(price_current):
 
 def get_df_newegg(keywords):
     """Get a dataframe for the results of a NewEgg search"""
-    ...
+    url = get_newegg_url(keywords)
+    soup = url_2_soup(url)
+    products = soup.find_all("div", class_="item-container")
+    data_products = [
+        {
+            "name": p.find("a", class_="item-title").text.strip(),
+            "price": get_newegg_price(p.find("li", class_="price-current").text),
+        }
+        for p in products
+        if p.find("li", class_="price-current").text
+    ]
+    return pd.DataFrame(data_products)
